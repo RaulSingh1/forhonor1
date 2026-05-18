@@ -1,0 +1,38 @@
+<%- include("partials/header", { pageTitle: pageTitle, bodyClass: bodyClass }) %>
+
+<section class="video-upload-section admin-panel" id="admin-panel">
+  <div class="video-upload-copy">
+    <p class="section-kicker">Adminpanel</p>
+    <h2>Last opp forsidevideoer</h2>
+
+    <p>
+      Du er innlogget som administrator. Ny video erstatter videoen som vises på forsiden.
+      Vanlige brukere ser bare innholdet, ikke opplastingsverktøyet.
+      Du kan laste opp opptil fire videoer, og de kan bla mellom med pilene i boksen.
+      Videoene starter dempet, men lyden kan slås på og av i boksen.
+    </p>
+
+    <% if (uploadStatus) { %>
+      <p class="upload-message <%= uploadStatus.type %>"><%= uploadStatus.text %></p>
+    <% } %>
+
+    <form class="video-upload-form" action="/admin/upload-videos" method="POST" enctype="multipart/form-data">
+      <label class="upload-button" for="videoInput">Velg videoer</label>
+      <input id="videoInput" name="videos" type="file" accept="video/*" multiple>
+      <button class="upload-submit" type="submit">Last opp videoer</button>
+    </form>
+
+    <p class="upload-note">
+      Best resultat får du med mp4 eller webm. Du kan laste opp flere filer samtidig, og det lagres maksimalt 4 videoer totalt.
+    </p>
+  </div>
+
+  <%- include("partials/video-carousel", {
+    featuredVideos,
+    emptyLabel: "Admin",
+    emptyTitle: "Ingen videoer lagt inn",
+    emptyText: "Velg en eller flere filer i skjemaet for å legge dem på forsiden."
+  }) %>
+</section>
+
+<%- include("partials/footer") %>

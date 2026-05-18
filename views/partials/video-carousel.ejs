@@ -1,0 +1,49 @@
+<%
+  const videos = Array.isArray(featuredVideos) ? featuredVideos.slice(0, 4) : [];
+  const hasVideos = videos.length > 0;
+  const safeVideosJson = JSON.stringify(videos).replace(/</g, "\\u003c");
+  const initialCounter = hasVideos ? `1 / ${videos.length}` : "";
+%>
+
+<div class="video-frame video-carousel" data-video-carousel data-video-count="<%= videos.length %>">
+  <% if (hasVideos) { %>
+    <button
+      class="video-pill video-pill--prev"
+      type="button"
+      data-video-prev
+      aria-label="Forrige video"
+      <%= videos.length <= 1 ? "disabled" : "" %>
+    >
+      <span aria-hidden="true">‹</span>
+    </button>
+
+    <div class="video-stage">
+      <video class="featured-video" controls autoplay muted loop playsinline data-video-element>
+        <source src="<%= videos[0].url %>" type="<%= videos[0].mimeType %>">
+        Nettleseren din støtter ikke video.
+      </video>
+      <button class="audio-toggle" type="button" data-video-audio aria-pressed="false">Slå lyd på</button>
+      <div class="video-counter" data-video-counter aria-live="polite"><%= initialCounter %></div>
+    </div>
+
+    <button
+      class="video-pill video-pill--next"
+      type="button"
+      data-video-next
+      aria-label="Neste video"
+      <%= videos.length <= 1 ? "disabled" : "" %>
+    >
+      <span aria-hidden="true">›</span>
+    </button>
+  <% } else { %>
+    <div class="video-placeholder" data-video-placeholder>
+      <span class="placeholder-label"><%= emptyLabel || "Videoboks" %></span>
+      <strong><%= emptyTitle || "Ingen video ennå" %></strong>
+      <p><%= emptyText || "Når admin laster opp en video, vises den her for alle brukere." %></p>
+    </div>
+  <% } %>
+</div>
+
+<script>
+  window.__FEATURED_VIDEOS__ = <%- safeVideosJson %>;
+</script>

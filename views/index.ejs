@@ -1,0 +1,84 @@
+<%- include("partials/header") %>
+
+<section class="hero">
+  <div class="hero-content">
+    <h2>Kulturmøter i For Honor</h2>
+
+    <p>
+      Utforsk kulturene til Samurai, Vikings og Knights.
+      Lær om våpen, klær, fighting-styles og hvorfor de kriger.
+    </p>
+
+    <button id="startBtn">Utforsk verden</button>
+  </div>
+</section>
+
+<section class="video-upload-section" id="featured-video">
+  <div class="video-upload-copy">
+    <p class="section-kicker">Forsidevideo</p>
+    <h2>Video på forsiden</h2>
+
+    <p>
+      Vanlige brukere ser bare denne boksen. Hvis en admin har lastet opp videoer,
+      vises de her. Bruk pillene i boksen for å bla mellom opptil fire videoer.
+      Videoene starter dempet, men du kan slå lyden på eller av med knappen i boksen.
+    </p>
+  </div>
+
+  <%- include("partials/video-carousel", {
+    featuredVideos,
+    emptyLabel: "Videoboks",
+    emptyTitle: "Ingen video ennå",
+    emptyText: "Når admin laster opp videoer, vises de her for alle brukere."
+  }) %>
+</section>
+
+<section class="faction" id="samurai">
+  <h2>Samurai</h2>
+
+  <p>
+    Samurai-fraksjonen fokuserer på ære, disiplin og raske angrep.
+    De bruker smarte kombinasjoner og presise våpen.
+  </p>
+
+  <div class="card-container">
+    <div class="card">
+      <h3>Kultur</h3>
+      <p>
+        Samurai følger Bushido-reglene og kjemper med respekt.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Våpen</h3>
+      <p>
+        Katana, Naginata og andre japanske våpen.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Maps</h3>
+      <p>
+        Templer, kirsebærtrær og japanske landsbyer.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="faction" id="vikings">
+  <h2>Vikings</h2>
+
+  <p>
+    Vikingene er brutale fighters som fokuserer på styrke og overlevelse.
+  </p>
+</section>
+
+<section class="faction" id="knights">
+  <h2>Knights</h2>
+
+  <p>
+    Knights bruker tung rustning og kjemper med disiplin og orden.
+  </p>
+</section>
+
+<%- include("partials/footer") %>

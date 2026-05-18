@@ -1,0 +1,21 @@
+<%- include("partials/header", { pageTitle: pageTitle, bodyClass: bodyClass }) %>
+
+<section class="auth-shell">
+  <div class="auth-copy">
+    <p class="section-kicker">Tilgang nektet</p>
+    <h2>403</h2>
+    <p><%= message %></p>
+  </div>
+
+  <div class="auth-card">
+    <h3>Hva nå?</h3>
+    <p class="auth-message error">Du kan gå tilbake til forsiden eller logge inn med en adminbruker.</p>
+
+    <div class="auth-links">
+      <a href="/">Til forsiden</a>
+      <a href="/login">Logg inn</a>
+    </div>
+  </div>
+</section>
+
+<%- include("partials/footer") %>

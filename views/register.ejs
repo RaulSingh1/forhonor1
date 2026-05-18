@@ -1,0 +1,45 @@
+<%- include("partials/header", { pageTitle: pageTitle, bodyClass: bodyClass }) %>
+
+<section class="auth-shell">
+  <div class="auth-copy">
+    <p class="section-kicker">Ny bruker</p>
+    <h2>Lag bruker</h2>
+    <p>
+      Opprett en vanlig bruker med e-post, brukernavn og passord. Passordet lagres som hash og må være minst 8 tegn.
+    </p>
+
+    <div class="auth-links">
+      <a href="/login?redirect=<%= encodeURIComponent(redirectTo || '/') %>">Til innlogging</a>
+      <a href="/">Til forsiden</a>
+    </div>
+  </div>
+
+  <form class="auth-card" action="/register" method="POST">
+    <h3>Registrering</h3>
+
+    <% if (message) { %>
+      <p class="auth-message <%= message.type %>"><%= message.text %></p>
+    <% } %>
+
+    <input type="hidden" name="redirectTo" value="<%= redirectTo || '/' %>">
+
+    <label>
+      <span>E-post</span>
+      <input type="email" name="email" value="<%= email || '' %>" autocomplete="email" required>
+    </label>
+
+    <label>
+      <span>Brukernavn</span>
+      <input type="text" name="username" value="<%= username || '' %>" autocomplete="username" required>
+    </label>
+
+    <label>
+      <span>Passord</span>
+      <input type="password" name="password" autocomplete="new-password" minlength="8" required>
+    </label>
+
+    <button type="submit">Opprett bruker</button>
+  </form>
+</section>
+
+<%- include("partials/footer") %>

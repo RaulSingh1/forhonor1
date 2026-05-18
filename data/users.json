@@ -1,0 +1,10 @@
+[
+  {
+    "id": "dd2260e3-9366-4400-b789-7f010dffcc61",
+    "email": "admin@forhonor.no",
+    "username": "For Honor Admin",
+    "passwordHash": "pbkdf2$120000$c1c02833ffe112722d5766fbe4adbc9d$d864589128c994ccd0fb618d2ae85b1ae53d4e590bb65afe1cab751428e6422238ec03c8202f90163b79589632ee076f0394da8177f17e770daf23b923dfb5d4",
+    "role": "admin",
+    "createdAt": "2026-05-18T08:18:45.756Z"
+  }
+]
