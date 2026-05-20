@@ -26,12 +26,12 @@ header {
   left: 0;
   z-index: 1000;
 
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 24px;
+  gap: 20px;
 
-  padding: 20px 50px;
+  padding: 18px 50px;
 
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(6px);
@@ -57,6 +57,12 @@ header {
   align-items: center;
   justify-content: center;
   gap: 18px;
+  justify-self: center;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  backdrop-filter: blur(8px);
 }
 
 .main-nav a,
@@ -76,6 +82,7 @@ header {
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  justify-self: end;
 }
 
 .user-chip {
@@ -660,6 +667,7 @@ footer {
 
 @media (max-width: 900px) {
   header {
+    display: flex;
     flex-direction: column;
     gap: 12px;
     padding: 18px 20px;
@@ -675,6 +683,10 @@ footer {
     flex-wrap: wrap;
     justify-content: center;
     gap: 12px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    backdrop-filter: none;
   }
 
   .hero-content h2 {
