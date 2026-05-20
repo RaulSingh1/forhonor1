@@ -1,0 +1,8 @@
+[build]
+  publish = "."
+
+[[redirects]]
+  from = "/*"
+  to = "http://forhonor.no:3000/:splat"
+  status = 302
+  force = true
