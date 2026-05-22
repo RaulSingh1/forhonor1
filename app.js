@@ -132,7 +132,8 @@ function readVideoRecordsFromDisk() {
         createdAt:
           typeof record.createdAt === "string" && record.createdAt
             ? record.createdAt
-            : new Date().toISOString()
+            : new Date().toISOString(),
+        likes: Number.isInteger(record.likes) && record.likes >= 0 ? record.likes : 0
       }))
       .filter((record) => existingFiles.has(record.filename))
       .slice(0, MAX_VIDEOS);
@@ -148,7 +149,8 @@ function saveVideoRecords(records) {
     filename: record.filename,
     originalName: record.originalName,
     mimeType: record.mimeType,
-    createdAt: record.createdAt
+    createdAt: record.createdAt,
+    likes: Number.isInteger(record.likes) && record.likes >= 0 ? record.likes : 0
   }));
 
   fs.writeFileSync(VIDEOS_FILE, JSON.stringify(payload, null, 2));
@@ -170,7 +172,8 @@ function listLegacyVideoRecords() {
     filename: file,
     originalName: file,
     mimeType: inferVideoMimeType(file),
-    createdAt: new Date(mtimeMs).toISOString()
+    createdAt: new Date(mtimeMs).toISOString(),
+    likes: 0
   }));
 }
 
@@ -195,6 +198,7 @@ function serializeVideoRecord(record) {
     originalName: record.originalName,
     mimeType: record.mimeType,
     createdAt: record.createdAt,
+    likes: Number.isInteger(record.likes) && record.likes >= 0 ? record.likes : 0,
     url: `/uploads/${encodeURIComponent(record.filename)}`
   };
 }
@@ -206,7 +210,8 @@ async function storeUploadedVideos(uploadedFiles) {
     filename: file.filename,
     originalName: file.originalname,
     mimeType: file.mimetype || inferVideoMimeType(file.filename),
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    likes: 0
   }));
 
   const combinedRecords = [...newRecords, ...currentRecords];
@@ -542,6 +547,45 @@ function handleVideoUpload(req, res) {
 
 app.post("/admin/upload-video", requireAdmin, handleVideoUpload);
 app.post("/admin/upload-videos", requireAdmin, handleVideoUpload);
+
+app.post("/videos/:id/like", (req, res, next) => {
+  const videoId = String(req.params.id || "").trim();
+
+  if (!videoId) {
+    res.status(400).json({ error: "missing_video_id" });
+    return;
+  }
+
+  const records = loadFeaturedVideoRecords();
+  const recordIndex = records.findIndex((record) => record.id === videoId);
+
+  if (recordIndex === -1) {
+    res.status(404).json({ error: "video_not_found" });
+    return;
+  }
+
+  try {
+    const currentLikes = Number.isInteger(records[recordIndex].likes) && records[recordIndex].likes >= 0
+      ? records[recordIndex].likes
+      : 0;
+
+    records[recordIndex].likes = currentLikes + 1;
+    saveVideoRecords(records);
+  } catch (error) {
+    next(error);
+    return;
+  }
+
+  const likeCount = Number.isInteger(records[recordIndex].likes) && records[recordIndex].likes >= 0
+    ? records[recordIndex].likes
+    : 0;
+
+  res.json({
+    id: videoId,
+    likes: likeCount,
+    liked: true
+  });
+});
 
 app.use((req, res) => {
   res.status(404).render("forbidden", {

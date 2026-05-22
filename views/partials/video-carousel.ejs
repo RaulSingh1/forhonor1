@@ -1,6 +1,8 @@
 <%
   const videos = Array.isArray(featuredVideos) ? featuredVideos.slice(0, 4) : [];
   const hasVideos = videos.length > 0;
+  const initialLikes = hasVideos && Number.isInteger(videos[0].likes) && videos[0].likes >= 0 ? videos[0].likes : 0;
+  const initialLiked = hasVideos && Boolean(videos[0].liked);
   const safeVideosJson = JSON.stringify(videos).replace(/</g, "\\u003c");
   const initialCounter = hasVideos ? `1 / ${videos.length}` : "";
 %>
@@ -22,6 +24,19 @@
         <source src="<%= videos[0].url %>" type="<%= videos[0].mimeType %>">
         Nettleseren din støtter ikke video.
       </video>
+
+      <button
+        class="video-like <%= initialLiked ? 'is-liked' : '' %>"
+        type="button"
+        data-video-like
+        aria-pressed="<%= initialLiked ? 'true' : 'false' %>"
+        <%= initialLiked ? "disabled" : "" %>
+      >
+        <span class="video-like-icon" aria-hidden="true">♥</span>
+        <span class="video-like-label" data-video-like-label><%= initialLiked ? "Likt" : "Lik" %></span>
+        <span class="video-like-count" data-video-like-count><%= initialLikes %></span>
+      </button>
+
       <button class="audio-toggle" type="button" data-video-audio aria-pressed="false">Slå lyd på</button>
       <div class="video-counter" data-video-counter aria-live="polite"><%= initialCounter %></div>
     </div>

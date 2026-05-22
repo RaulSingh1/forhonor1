@@ -1,5 +1,70 @@
 document.addEventListener("DOMContentLoaded", function () {
   var startBtn = document.getElementById("startBtn");
+  var likeStorageKey = "forhonor-video-likes-v1";
+
+  function readLikeState() {
+    if (typeof window.localStorage === "undefined") {
+      return {};
+    }
+
+    try {
+      var raw = window.localStorage.getItem(likeStorageKey);
+      if (!raw) {
+        return {};
+      }
+
+      var parsed = JSON.parse(raw);
+
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        return {};
+      }
+
+      return parsed;
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function writeLikeState(state) {
+    if (typeof window.localStorage === "undefined") {
+      return;
+    }
+
+    try {
+      window.localStorage.setItem(likeStorageKey, JSON.stringify(state));
+    } catch (error) {
+      // Ignore storage quota or privacy-mode failures.
+    }
+  }
+
+  function applyStoredLikeState(video) {
+    var state = readLikeState();
+    var entry = video && state[video.id];
+
+    if (!video || !entry || typeof entry !== "object") {
+      return video;
+    }
+
+    if (typeof entry.likes === "number" && entry.likes >= 0) {
+      video.likes = entry.likes;
+    }
+
+    video.liked = Boolean(entry.liked);
+    return video;
+  }
+
+  function persistLikeState(video) {
+    if (!video || !video.id) {
+      return;
+    }
+
+    var state = readLikeState();
+    state[video.id] = {
+      likes: typeof video.likes === "number" && video.likes >= 0 ? video.likes : 0,
+      liked: Boolean(video.liked)
+    };
+    writeLikeState(state);
+  }
 
   function getFeaturedVideos() {
     var videos = window.__FEATURED_VIDEOS__;
@@ -12,6 +77,9 @@ document.addEventListener("DOMContentLoaded", function () {
       .filter(function (video) {
         return video && typeof video.url === "string" && video.url;
       })
+      .map(function (video) {
+        return applyStoredLikeState(video);
+      })
       .slice(0, 4);
   }
 
@@ -22,6 +90,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
     button.textContent = isMuted ? "Slå lyd på" : "Slå lyd av";
     button.setAttribute("aria-pressed", String(!isMuted));
+  }
+
+  function syncLikeButton(button, record, isLiking) {
+    if (!button || !record) {
+      return;
+    }
+
+    var label = button.querySelector("[data-video-like-label]");
+    var count = button.querySelector("[data-video-like-count]");
+    var liked = Boolean(record.liked);
+    var likes = typeof record.likes === "number" && record.likes >= 0 ? record.likes : 0;
+
+    button.classList.toggle("is-liked", liked);
+    button.setAttribute("aria-pressed", String(liked));
+    button.disabled = liked || Boolean(isLiking);
+
+    if (label) {
+      label.textContent = liked ? "Likt" : "Lik";
+    }
+
+    if (count) {
+      count.textContent = String(likes);
+    }
   }
 
   function updateVideoSource(video, source, record) {
@@ -50,11 +141,13 @@ document.addEventListener("DOMContentLoaded", function () {
     var video = frame.querySelector("[data-video-element]");
     var source = video ? video.querySelector("source") : null;
     var audioButton = frame.querySelector("[data-video-audio]");
+    var likeButton = frame.querySelector("[data-video-like]");
     var prevButton = frame.querySelector("[data-video-prev]");
     var nextButton = frame.querySelector("[data-video-next]");
     var counter = frame.querySelector("[data-video-counter]");
     var currentIndex = 0;
     var isMuted = true;
+    var isLiking = false;
 
     if (!video || videos.length === 0) {
       return;
@@ -82,6 +175,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
       syncCounter();
       syncAudioButton(audioButton, isMuted);
+      syncLikeButton(likeButton, videos[currentIndex], isLiking);
 
       if (shouldPlay !== false) {
         video.play().catch(function () {});
@@ -100,6 +194,54 @@ document.addEventListener("DOMContentLoaded", function () {
       syncAudioButton(audioButton, isMuted);
     }
 
+    function likeCurrentVideo() {
+      var record = videos[currentIndex];
+
+      if (!likeButton || !record || record.liked || isLiking) {
+        return;
+      }
+
+      isLiking = true;
+      record.likes = (typeof record.likes === "number" && record.likes >= 0 ? record.likes : 0) + 1;
+      record.liked = true;
+      persistLikeState(record);
+      syncLikeButton(likeButton, record, isLiking);
+
+      fetch("/videos/" + encodeURIComponent(record.id) + "/like", {
+        method: "POST",
+        headers: {
+          Accept: "application/json"
+        },
+        credentials: "same-origin"
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error("Unable to like video");
+          }
+
+          return response.json();
+        })
+        .then(function (payload) {
+          var likes = payload && typeof payload.likes === "number" && payload.likes >= 0 ? payload.likes : record.likes;
+
+          if (likes > record.likes) {
+            record.likes = likes;
+          }
+
+          persistLikeState(record);
+        })
+        .catch(function () {
+          persistLikeState(record);
+        })
+        .then(function () {
+          isLiking = false;
+
+          if (videos[currentIndex] && videos[currentIndex].id === record.id) {
+            syncLikeButton(likeButton, videos[currentIndex], isLiking);
+          }
+        });
+    }
+
     if (prevButton) {
       prevButton.addEventListener("click", function () {
         setCurrentIndex(currentIndex - 1, true);
@@ -116,6 +258,10 @@ document.addEventListener("DOMContentLoaded", function () {
       audioButton.addEventListener("click", toggleAudio);
     }
 
+    if (likeButton) {
+      likeButton.addEventListener("click", likeCurrentVideo);
+    }
+
     if (videos.length > 1) {
       if (prevButton) {
         prevButton.disabled = false;
@@ -130,6 +276,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     video.addEventListener("loadeddata", function () {
       syncAudioButton(audioButton, isMuted);
+      syncLikeButton(likeButton, videos[currentIndex], isLiking);
     });
   }
 

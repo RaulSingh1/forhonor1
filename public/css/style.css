@@ -425,6 +425,53 @@ header {
   border-color: rgba(212, 175, 55, 0.7);
 }
 
+.video-like {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 3;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  background: rgba(10, 10, 10, 0.72);
+  color: #f3f0e8;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+}
+
+.video-like:hover {
+  transform: translateY(-1px);
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.7);
+}
+
+.video-like.is-liked {
+  background: rgba(212, 175, 55, 0.14);
+  border-color: rgba(212, 175, 55, 0.8);
+  color: #f7dd8a;
+}
+
+.video-like:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.video-like-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.video-like-count {
+  min-width: 1.2ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .video-counter {
   position: absolute;
   left: 50%;
