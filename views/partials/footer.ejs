@@ -2,6 +2,9 @@
   <p>Laget av Raul - For Honor prosjekt</p>
 </footer>
 
+<script>
+  window.__API_BASE_URL__ = <%- JSON.stringify(apiBaseUrl || "").replace(/</g, "\\u003c") %>;
+</script>
 <script src="/js/script.js"></script>
 </body>
 </html>

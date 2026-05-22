@@ -1,6 +1,12 @@
 document.addEventListener("DOMContentLoaded", function () {
   var startBtn = document.getElementById("startBtn");
+  var apiBaseUrl = typeof window.__API_BASE_URL__ === "string" ? window.__API_BASE_URL__.trim() : "";
   var likeStorageKey = "forhonor-video-likes-v1";
+
+  function buildApiUrl(path) {
+    var base = apiBaseUrl || window.location.origin;
+    return new URL(path, base).toString();
+  }
 
   function readLikeState() {
     if (typeof window.localStorage === "undefined") {
@@ -207,12 +213,11 @@ document.addEventListener("DOMContentLoaded", function () {
       persistLikeState(record);
       syncLikeButton(likeButton, record, isLiking);
 
-      fetch("/videos/" + encodeURIComponent(record.id) + "/like", {
+      fetch(buildApiUrl("/api/videos/" + encodeURIComponent(record.id) + "/like"), {
         method: "POST",
         headers: {
           Accept: "application/json"
-        },
-        credentials: "same-origin"
+        }
       })
         .then(function (response) {
           if (!response.ok) {

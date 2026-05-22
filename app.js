@@ -2,8 +2,10 @@ const express = require("express");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
+const { spawnSync } = require("child_process");
 const session = require("express-session");
 const multer = require("multer");
+const ffmpegPath = require("ffmpeg-static");
 
 const {
   createUser,
@@ -23,6 +25,7 @@ const UPLOAD_DIR = path.join(__dirname, "public", "uploads");
 const VIDEOS_FILE = path.join(DATA_DIR, "videos.json");
 const MAX_VIDEOS = 4;
 const VIDEO_FILE_PREFIX = "featured-video";
+const PLAYABLE_VIDEO_MIME_TYPES = new Set(["video/mp4", "video/webm"]);
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -54,6 +57,7 @@ const upload = multer({
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "forhonor-dev-session-secret",
@@ -67,6 +71,21 @@ app.use(
   })
 );
 app.use(express.static(path.join(__dirname, "public")));
+const PUBLIC_API_BASE_URL = process.env.PUBLIC_API_BASE_URL || "";
+
+app.use("/api", (req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
+  res.setHeader("Access-Control-Max-Age", "86400");
+
+  if (req.method === "OPTIONS") {
+    res.sendStatus(204);
+    return;
+  }
+
+  next();
+});
 
 function safeRedirectTarget(target) {
   if (typeof target !== "string") {
@@ -87,15 +106,188 @@ function inferVideoMimeType(filename) {
     return "video/webm";
   }
 
+  if (ext === ".mp4" || ext === ".m4v") {
+    return "video/mp4";
+  }
+
   if (ext === ".mov") {
     return "video/quicktime";
   }
 
-  if (ext === ".m4v") {
-    return "video/x-m4v";
+  return "video/mp4";
+}
+
+function normalizeVideoMimeType(mimeType, filename) {
+  const ext = path.extname(filename).toLowerCase();
+
+  if (ext === ".webm") {
+    return "video/webm";
+  }
+
+  if (ext === ".mp4" || ext === ".m4v") {
+    return "video/mp4";
+  }
+
+  if (ext === ".mov") {
+    return "video/quicktime";
+  }
+
+  if (typeof mimeType === "string" && mimeType.startsWith("video/")) {
+    return mimeType;
   }
 
   return "video/mp4";
+}
+
+function playableVideoFilename(filename) {
+  return `${path.basename(filename, path.extname(filename))}.mp4`;
+}
+
+function transcodeVideoToMp4(sourcePath, targetPath) {
+  if (!ffmpegPath) {
+    throw new Error("ffmpeg-static er ikke tilgjengelig");
+  }
+
+  const result = spawnSync(
+    ffmpegPath,
+    [
+      "-y",
+      "-i",
+      sourcePath,
+      "-map",
+      "0:v:0",
+      "-map",
+      "0:a?",
+      "-c:v",
+      "libx264",
+      "-preset",
+      "veryfast",
+      "-crf",
+      "23",
+      "-pix_fmt",
+      "yuv420p",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "128k",
+      "-movflags",
+      "+faststart",
+      targetPath
+    ],
+    {
+      stdio: ["ignore", "pipe", "pipe"]
+    }
+  );
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    const stderr = result.stderr ? result.stderr.toString("utf8").trim() : "";
+    throw new Error(stderr || `ffmpeg avsluttet med kode ${result.status}`);
+  }
+}
+
+function normalizeStoredVideoRecord(record) {
+  const sourceFilename = record.filename;
+  const sourcePath = path.join(UPLOAD_DIR, sourceFilename);
+  const currentMimeType = normalizeVideoMimeType(record.mimeType, sourceFilename);
+  const currentExt = path.extname(sourceFilename).toLowerCase();
+
+  if (currentMimeType === "video/webm" || currentExt === ".webm") {
+    return {
+      ...record,
+      mimeType: "video/webm"
+    };
+  }
+
+  if (currentExt !== ".mov" && currentExt !== ".m4v" && currentMimeType === "video/mp4") {
+    return {
+      ...record,
+      mimeType: "video/mp4"
+    };
+  }
+
+  const targetFilename = playableVideoFilename(sourceFilename);
+  const targetPath = path.join(UPLOAD_DIR, targetFilename);
+
+  if (!fs.existsSync(sourcePath)) {
+    if (fs.existsSync(targetPath)) {
+      return {
+        ...record,
+        filename: targetFilename,
+        mimeType: "video/mp4"
+      };
+    }
+
+    return {
+      ...record,
+      mimeType: currentMimeType === "video/quicktime" ? "video/mp4" : currentMimeType
+    };
+  }
+
+  if (sourcePath !== targetPath && fs.existsSync(targetPath)) {
+    try {
+      fs.unlinkSync(sourcePath);
+    } catch (error) {
+      // Ignore cleanup failures.
+    }
+
+    return {
+      ...record,
+      filename: targetFilename,
+      mimeType: "video/mp4"
+    };
+  }
+
+  if (sourcePath !== targetPath) {
+    transcodeVideoToMp4(sourcePath, targetPath);
+
+    try {
+      fs.unlinkSync(sourcePath);
+    } catch (error) {
+      // Ignore cleanup failures.
+    }
+
+    return {
+      ...record,
+      filename: targetFilename,
+      mimeType: "video/mp4"
+    };
+  }
+
+  return {
+    ...record,
+    mimeType: "video/mp4"
+  };
+}
+
+function normalizeStoredVideoRecords(records) {
+  let changed = false;
+
+  const normalizedRecords = records.map((record) => {
+    try {
+      const normalizedRecord = normalizeStoredVideoRecord(record);
+      if (
+        normalizedRecord.filename !== record.filename ||
+        normalizedRecord.mimeType !== record.mimeType
+      ) {
+        changed = true;
+      }
+
+      return normalizedRecord;
+    } catch (error) {
+      console.error(`Kunne ikke normalisere videoen ${record.filename}:`, error);
+      return record;
+    }
+  });
+
+  if (changed) {
+    saveVideoRecords(normalizedRecords);
+  }
+
+  return normalizedRecords;
 }
 
 function readVideoRecordsFromDisk() {
@@ -148,7 +340,7 @@ function saveVideoRecords(records) {
     id: record.id,
     filename: record.filename,
     originalName: record.originalName,
-    mimeType: record.mimeType,
+    mimeType: normalizeVideoMimeType(record.mimeType, record.filename),
     createdAt: record.createdAt,
     likes: Number.isInteger(record.likes) && record.likes >= 0 ? record.likes : 0
   }));
@@ -188,7 +380,7 @@ function loadFeaturedVideoRecords() {
     }
   }
 
-  return records.slice(0, MAX_VIDEOS);
+  return normalizeStoredVideoRecords(records).slice(0, MAX_VIDEOS);
 }
 
 function serializeVideoRecord(record) {
@@ -196,7 +388,7 @@ function serializeVideoRecord(record) {
     id: record.id,
     filename: record.filename,
     originalName: record.originalName,
-    mimeType: record.mimeType,
+    mimeType: normalizeVideoMimeType(record.mimeType, record.filename),
     createdAt: record.createdAt,
     likes: Number.isInteger(record.likes) && record.likes >= 0 ? record.likes : 0,
     url: `/uploads/${encodeURIComponent(record.filename)}`
@@ -205,11 +397,42 @@ function serializeVideoRecord(record) {
 
 async function storeUploadedVideos(uploadedFiles) {
   const currentRecords = loadFeaturedVideoRecords();
-  const newRecords = uploadedFiles.map((file) => ({
+  const normalizedFiles = uploadedFiles.map((file) => {
+    const sourcePath = path.join(UPLOAD_DIR, file.filename);
+    const currentMimeType = normalizeVideoMimeType(file.mimetype, file.filename);
+    const currentExt = path.extname(file.filename).toLowerCase();
+
+    if (currentExt === ".mov" || currentExt === ".m4v") {
+      const targetFilename = playableVideoFilename(file.filename);
+      const targetPath = path.join(UPLOAD_DIR, targetFilename);
+
+      transcodeVideoToMp4(sourcePath, targetPath);
+
+      try {
+        fs.unlinkSync(sourcePath);
+      } catch (error) {
+        // Ignore cleanup failures.
+      }
+
+      return {
+        filename: targetFilename,
+        originalName: file.originalname,
+        mimeType: "video/mp4"
+      };
+    }
+
+    return {
+      filename: file.filename,
+      originalName: file.originalname,
+      mimeType: currentMimeType
+    };
+  });
+
+  const newRecords = normalizedFiles.map((file) => ({
     id: crypto.randomUUID(),
     filename: file.filename,
-    originalName: file.originalname,
-    mimeType: file.mimetype || inferVideoMimeType(file.filename),
+    originalName: file.originalName,
+    mimeType: file.mimeType,
     createdAt: new Date().toISOString(),
     likes: 0
   }));
@@ -352,6 +575,7 @@ function requireAdmin(req, res, next) {
 app.use((req, res, next) => {
   res.locals.currentUser = req.session.user || null;
   res.locals.isAdmin = Boolean(req.session.user && req.session.user.role === "admin");
+  res.locals.apiBaseUrl = PUBLIC_API_BASE_URL;
   res.locals.featuredVideos = loadFeaturedVideoRecords().map(serializeVideoRecord);
   next();
 });
@@ -361,6 +585,17 @@ app.get("/", (req, res) => {
     pageTitle: "For Honor - Kulturmøter",
     bodyClass: "home-page"
   });
+});
+
+app.get("/kilder", (req, res) => {
+  res.render("kilder", {
+    pageTitle: "Kilder - For Honor",
+    bodyClass: "sources-page"
+  });
+});
+
+app.get("/sources", (req, res) => {
+  res.redirect(302, "/kilder");
 });
 
 app.get("/login", (req, res) => {
@@ -548,19 +783,12 @@ function handleVideoUpload(req, res) {
 app.post("/admin/upload-video", requireAdmin, handleVideoUpload);
 app.post("/admin/upload-videos", requireAdmin, handleVideoUpload);
 
-app.post("/videos/:id/like", (req, res, next) => {
-  const videoId = String(req.params.id || "").trim();
-
-  if (!videoId) {
-    res.status(400).json({ error: "missing_video_id" });
-    return;
-  }
-
+function incrementVideoLike(videoId, callback) {
   const records = loadFeaturedVideoRecords();
   const recordIndex = records.findIndex((record) => record.id === videoId);
 
   if (recordIndex === -1) {
-    res.status(404).json({ error: "video_not_found" });
+    callback(null, null);
     return;
   }
 
@@ -572,20 +800,60 @@ app.post("/videos/:id/like", (req, res, next) => {
     records[recordIndex].likes = currentLikes + 1;
     saveVideoRecords(records);
   } catch (error) {
-    next(error);
+    callback(error);
     return;
   }
 
-  const likeCount = Number.isInteger(records[recordIndex].likes) && records[recordIndex].likes >= 0
-    ? records[recordIndex].likes
-    : 0;
+  const updatedRecord = records[recordIndex];
+  const likeCount = Number.isInteger(updatedRecord.likes) && updatedRecord.likes >= 0 ? updatedRecord.likes : 0;
 
-  res.json({
-    id: videoId,
+  callback(null, {
+    id: updatedRecord.id,
     likes: likeCount,
-    liked: true
+    record: serializeVideoRecord(updatedRecord)
+  });
+}
+
+function handleLikeRequest(req, res, next) {
+  const videoId = String(req.params.id || "").trim();
+
+  if (!videoId) {
+    res.status(400).json({ error: "missing_video_id" });
+    return;
+  }
+
+  incrementVideoLike(videoId, (error, result) => {
+    if (error) {
+      next(error);
+      return;
+    }
+
+    if (!result) {
+      res.status(404).json({ error: "video_not_found" });
+      return;
+    }
+
+    res.json({
+      id: result.id,
+      likes: result.likes,
+      liked: true,
+      video: result.record
+    });
+  });
+}
+
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true });
+});
+
+app.get("/api/videos", (req, res) => {
+  res.json({
+    videos: loadFeaturedVideoRecords().map(serializeVideoRecord)
   });
 });
+
+app.post("/api/videos/:id/like", handleLikeRequest);
+app.post("/videos/:id/like", handleLikeRequest);
 
 app.use((req, res) => {
   res.status(404).render("forbidden", {
