@@ -14,7 +14,8 @@ body {
 body.auth-page,
 body.admin-page,
 body.forbidden-page,
-body.sources-page {
+body.sources-page,
+body.theme-page {
   background:
     radial-gradient(circle at top, rgba(212, 175, 55, 0.08), transparent 42%),
     linear-gradient(180deg, #0d0d0d 0%, #111 100%);
@@ -289,6 +290,17 @@ header {
   line-height: 1.8;
   font-size: 18px;
   color: #d8d4ca;
+}
+
+.video-upload-copy .video-warning {
+  width: fit-content;
+  margin-top: 18px;
+  padding: 11px 16px;
+  border: 1px solid rgba(173, 50, 50, 0.55);
+  background: rgba(117, 23, 23, 0.24);
+  color: #ffc4bd;
+  font-size: 15px;
+  line-height: 1.5;
 }
 
 .upload-message {
@@ -662,6 +674,73 @@ header {
   color: #d4af37;
 }
 
+.faction-portrait {
+  width: 300px;
+  min-height: 300px;
+  margin: 0;
+  align-self: end;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  background: #1a1a1a;
+  border: 1px solid #333;
+}
+
+.faction-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.faction-portrait--raider,
+.faction-portrait--kensei,
+.faction-portrait--warden {
+  padding: 12px;
+}
+
+.faction-symbols {
+  width: min(1120px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 18px 0 92px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.faction-symbol {
+  min-height: 420px;
+  padding: 28px 24px;
+  text-align: center;
+  border: 1px solid rgba(212, 175, 55, 0.24);
+  background:
+    linear-gradient(150deg, rgba(212, 175, 55, 0.08), rgba(15, 15, 15, 0.98));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.38);
+}
+
+.faction-symbol img {
+  display: block;
+  width: min(220px, 100%);
+  height: 270px;
+  margin: 0 auto 20px;
+  object-fit: contain;
+}
+
+.faction-symbol h3 {
+  margin-bottom: 12px;
+  color: #d4af37;
+  font-size: 28px;
+}
+
+.faction-symbol p {
+  max-width: 310px;
+  margin: 0 auto;
+  color: #d8d4ca;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
 .sources-intro {
   max-width: 920px;
   line-height: 1.8;
@@ -742,6 +821,53 @@ header {
   line-height: 1.8;
   font-size: 16px;
   color: #b9b2a4;
+}
+
+.theme-intro {
+  max-width: 920px;
+  line-height: 1.85;
+  font-size: 20px;
+  color: #ddd5c4;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 44px;
+}
+
+.theme-card,
+.theme-summary {
+  border: 1px solid rgba(212, 175, 55, 0.22);
+  background:
+    linear-gradient(145deg, rgba(31, 26, 19, 0.96), rgba(17, 17, 17, 0.98));
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.22);
+}
+
+.theme-card {
+  min-height: 280px;
+  padding: 30px;
+}
+
+.theme-card h3,
+.theme-summary h3 {
+  margin-bottom: 15px;
+  color: #d4af37;
+  font-size: 28px;
+}
+
+.theme-card p,
+.theme-summary p {
+  color: #ddd7ca;
+  line-height: 1.85;
+  font-size: 17px;
+}
+
+.theme-summary {
+  max-width: 920px;
+  margin-top: 28px;
+  padding: 34px;
 }
 
 .auth-shell {
@@ -925,6 +1051,14 @@ footer {
     grid-template-columns: 1fr;
   }
 
+  .theme-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .theme-card {
+    min-height: 0;
+  }
+
   .hero::before {
     background-position: center center;
     transform: scale(1.06);
@@ -940,6 +1074,19 @@ footer {
 
   .card {
     width: 100%;
+  }
+
+  .faction-portrait {
+    width: 100%;
+  }
+
+  .faction-symbols {
+    grid-template-columns: 1fr;
+    width: min(420px, calc(100% - 48px));
+  }
+
+  .faction-symbol {
+    min-height: 0;
   }
 
   .video-upload-section {

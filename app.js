@@ -503,6 +503,13 @@ function parseAuthMessage(query, page) {
       };
     }
 
+    if (query.error === "password_mismatch") {
+      return {
+        type: "error",
+        text: "Passordene er ikke like."
+      };
+    }
+
     if (query.error === "missing_fields") {
       return {
         type: "error",
@@ -594,6 +601,13 @@ app.get("/kilder", (req, res) => {
   });
 });
 
+app.get("/tema", (req, res) => {
+  res.render("tema", {
+    pageTitle: "Tema - Kulturkonflikt i For Honor",
+    bodyClass: "theme-page"
+  });
+});
+
 app.get("/sources", (req, res) => {
   res.redirect(302, "/kilder");
 });
@@ -677,9 +691,10 @@ app.post("/register", (req, res) => {
   const email = String(req.body.email || "").trim();
   const username = String(req.body.username || "").trim();
   const password = String(req.body.password || "");
+  const confirmPassword = String(req.body.confirmPassword || "");
   const redirectTo = safeRedirectTarget(req.body.redirectTo);
 
-  if (!email || !username || !password) {
+  if (!email || !username || !password || !confirmPassword) {
     res.render("register", {
       pageTitle: "Lag bruker - For Honor",
       bodyClass: "auth-page",
@@ -688,7 +703,7 @@ app.post("/register", (req, res) => {
       username,
       message: {
         type: "error",
-        text: "Fyll inn e-post, brukernavn og passord."
+        text: "Fyll inn e-post, brukernavn og begge passordfeltene."
       }
     });
     return;
@@ -704,6 +719,21 @@ app.post("/register", (req, res) => {
       message: {
         type: "error",
         text: "Passordet må være minst 8 tegn."
+      }
+    });
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    res.render("register", {
+      pageTitle: "Lag bruker - For Honor",
+      bodyClass: "auth-page",
+      redirectTo,
+      email,
+      username,
+      message: {
+        type: "error",
+        text: "Passordene er ikke like."
       }
     });
     return;

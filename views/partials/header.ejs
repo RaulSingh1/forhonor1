@@ -12,6 +12,7 @@
   const isAuthPage = pageClasses.indexOf("auth-page") !== -1 || pageClasses.indexOf("forbidden-page") !== -1;
   const isAdminPage = pageClasses.indexOf("admin-page") !== -1;
   const isSourcesPage = pageClasses.indexOf("sources-page") !== -1;
+  const isThemePage = pageClasses.indexOf("theme-page") !== -1;
 %>
 <body class="<%= pageClasses %>">
 
@@ -26,18 +27,26 @@
   <nav class="main-nav">
     <% if (isAuthPage) { %>
       <a href="/">Til forsiden</a>
+      <a href="/tema">Tema</a>
       <a href="/kilder">Kilder</a>
     <% } else if (isAdminPage) { %>
       <a href="/">Til forsiden</a>
       <a href="#admin-panel">Opplasting</a>
+      <a href="/tema">Tema</a>
       <a href="/kilder">Kilder</a>
     <% } else if (isSourcesPage) { %>
       <a href="/">Til forsiden</a>
+      <a href="/tema">Tema</a>
+    <% } else if (isThemePage) { %>
+      <a href="/">Til forsiden</a>
+      <a href="#konflikten">Konflikten</a>
+      <a href="/kilder">Kilder</a>
     <% } else { %>
       <a href="#featured-video">Video</a>
       <a href="#samurai">Samurai</a>
       <a href="#vikings">Vikings</a>
       <a href="#knights">Knights</a>
+      <a href="/tema">Tema</a>
       <a href="/kilder">Kilder</a>
     <% } %>
   </nav>

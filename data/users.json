@@ -6,5 +6,13 @@
     "passwordHash": "pbkdf2$120000$c1c02833ffe112722d5766fbe4adbc9d$d864589128c994ccd0fb618d2ae85b1ae53d4e590bb65afe1cab751428e6422238ec03c8202f90163b79589632ee076f0394da8177f17e770daf23b923dfb5d4",
     "role": "admin",
     "createdAt": "2026-05-18T08:18:45.756Z"
+  },
+  {
+    "id": "4230b3d7-0b15-424f-8a2e-ba6a23ff67b0",
+    "email": "raula9413@gmail.com",
+    "username": "raula9413@gmail.com",
+    "passwordHash": "pbkdf2$120000$e79023e7930279802c931c4b5eee6410$9dfc3ab48031a41df03b1fdb013e9d9df9e83248a56d6e9820eed80669a8cd62b23079e3142a5549f9c4595f3489cd9d97188968f139969edc63c1c33792b8a2",
+    "role": "user",
+    "createdAt": "2026-05-22T11:04:22.111Z"
   }
 ]
