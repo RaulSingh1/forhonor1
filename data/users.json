@@ -14,5 +14,13 @@
     "passwordHash": "pbkdf2$120000$e79023e7930279802c931c4b5eee6410$9dfc3ab48031a41df03b1fdb013e9d9df9e83248a56d6e9820eed80669a8cd62b23079e3142a5549f9c4595f3489cd9d97188968f139969edc63c1c33792b8a2",
     "role": "user",
     "createdAt": "2026-05-22T11:04:22.111Z"
+  },
+  {
+    "id": "cafcbd31-dc22-4a16-817e-a0fef25a3769",
+    "email": "rsd@gmail.com",
+    "username": "rsd@gmail.com",
+    "passwordHash": "pbkdf2$120000$76ef4287b401eca4019feffb939f3809$228d6cb7553aa697e9e2ef8aed54c4e2232b314d18d2c937a130ec278d3cb286fdc0b914d4f12c9b99a48ec14386ed75fb68cb4a712d3ef81eeb799ee64026bf",
+    "role": "user",
+    "createdAt": "2026-06-01T09:13:10.044Z"
   }
 ]

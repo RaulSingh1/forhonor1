@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const crypto = require("crypto");
 const fs = require("fs");
@@ -14,8 +16,6 @@ const {
   sanitizeUser,
   verifyPassword
 } = require("./lib/userStore");
-
-initializeUserStore();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -622,7 +622,7 @@ app.get("/login", (req, res) => {
   });
 });
 
-app.post("/login", (req, res, next) => {
+app.post("/login", async (req, res, next) => {
   const email = String(req.body.email || "").trim();
   const password = String(req.body.password || "");
   const redirectTo = safeRedirectTarget(req.body.redirectTo);
@@ -641,7 +641,14 @@ app.post("/login", (req, res, next) => {
     return;
   }
 
-  const user = findUserByEmail(email);
+  let user = null;
+
+  try {
+    user = await findUserByEmail(email);
+  } catch (error) {
+    next(error);
+    return;
+  }
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
     res.render("login", {
@@ -687,7 +694,7 @@ app.get("/register", (req, res) => {
   });
 });
 
-app.post("/register", (req, res) => {
+app.post("/register", async (req, res, next) => {
   const email = String(req.body.email || "").trim();
   const username = String(req.body.username || "").trim();
   const password = String(req.body.password || "");
@@ -740,7 +747,7 @@ app.post("/register", (req, res) => {
   }
 
   try {
-    createUser({ email, username, password, role: "user" });
+    await createUser({ email, username, password, role: "user" });
   } catch (error) {
     if (error && error.message === "EMAIL_EXISTS") {
       res.render("register", {
@@ -757,7 +764,8 @@ app.post("/register", (req, res) => {
       return;
     }
 
-    throw error;
+    next(error);
+    return;
   }
 
   res.redirect(
@@ -893,6 +901,17 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server kjører på http://${HOST}:${PORT}`);
-});
+async function startServer() {
+  try {
+    await initializeUserStore();
+
+    app.listen(PORT, HOST, () => {
+      console.log(`Server kjører på http://${HOST}:${PORT}`);
+    });
+  } catch (error) {
+    console.error("Kunne ikke starte serveren:", error);
+    process.exit(1);
+  }
+}
+
+startServer();
